@@ -2,48 +2,73 @@ import os
 import gzip
 import json
 
-# 源目录（anno 文件夹）
 source_dir = '/data/wangchuanye/DriveE2E/data_drivee2e_expert_traj_V1/STR_DriveE2ETown04Opt_Route8_Weather21/anno'
 
-# 目标目录（calib 文件夹）
-target_dir_calib = os.path.expanduser('~/V2X-Seq-SPD/vehicle-side/calib')
 
-# 目标目录（label 文件夹）
+target_dir_coop_label = os.path.expanduser('~/V2X-Seq-SPD/cooperative/label')
+target_dir_infra_velodyne = os.path.expanduser('~/V2X-Seq-SPD/infrastructure-side/velodyne')
+target_dir_infra_image = os.path.expanduser('~/V2X-Seq-SPD/infrastructure-side/image')
+target_dir_infra_calib = os.path.expanduser('~/V2X-Seq-SPD/infrastructure-side/calib')
+target_dir_infra_label = os.path.expanduser('~/V2X-Seq-SPD/infrastructure-side/label')
+target_dir_maps = os.path.expanduser('~/V2X-Seq-SPD/maps')
+target_dir_velodyne = os.path.expanduser('~/V2X-Seq-SPD/vehicle-side/velodyne')
+target_dir_image = os.path.expanduser('~/V2X-Seq-SPD/vehicle-side/image')
+target_dir_calib = os.path.expanduser('~/V2X-Seq-SPD/vehicle-side/calib')
 target_dir_label = os.path.expanduser('~/V2X-Seq-SPD/vehicle-side/label')
 
-# 确保目标目录存在，如果不存在则创建
-if not os.path.exists(target_dir_calib):
-    os.makedirs(target_dir_calib)
-if not os.path.exists(target_dir_label):
-    os.makedirs(target_dir_label)
 
-# 遍历 anno 文件夹中的所有 .json.gz 文件
+os.makedirs(target_dir_coop_label, exist_ok=True)
+os.makedirs(target_dir_infra_velodyne, exist_ok=True)
+os.makedirs(target_dir_infra_image, exist_ok=True)
+os.makedirs(target_dir_infra_calib, exist_ok=True)
+os.makedirs(target_dir_infra_label, exist_ok=True)
+os.makedirs(target_dir_maps, exist_ok=True)
+os.makedirs(target_dir_velodyne, exist_ok=True)
+os.makedirs(target_dir_image, exist_ok=True)
+os.makedirs(target_dir_calib, exist_ok=True)
+os.makedirs(target_dir_label, exist_ok=True)
+
+
+# proc the json in anno dir. 
 for filename in os.listdir(source_dir):
     if filename.endswith('.json.gz'):
-        # 构造源文件路径
         source_file = os.path.join(source_dir, filename)
-
-        # 打开并读取 .json.gz 文件
+        # open json.gz
         with gzip.open(source_file, 'rt', encoding='utf-8') as gz_file:
             data = json.load(gz_file)
         
-        # 提取 'sensors' 数据
         sensors_data = data.get('sensors', {})
-
-        # 提取 'bounding_boxes' 数据
         bounding_boxes_data = data.get('bounding_boxes', {})
+        filtered_sensors_data = {key: value for key, value in sensors_data.items() if key != 'CAM_RS_NORTH'}
+        CAM_RS_NORTH_sensors_data = {key: value for key, value in sensors_data.items() if key == 'CAM_RS_NORTH'}
 
-        # 构造目标文件路径，保存为 .json 文件（不带 .gz）
+        # change tails
         target_file_calib = os.path.join(target_dir_calib, filename.replace('.json.gz', '.json'))
         target_file_label = os.path.join(target_dir_label, filename.replace('.json.gz', '.json'))
+        target_file_infra_calib = os.path.join(target_dir_infra_calib, filename.replace('.json.gz', '.json'))
+        target_file_infra_label = os.path.join(target_dir_infra_label, filename.replace('.json.gz', '.json'))
+        target_file_coop_label = os.path.join(target_dir_coop_label, filename.replace('.json.gz', '.json'))
 
-        # 保存提取的 'sensors' 数据到目标 calib 路径
+        # write
         with open(target_file_calib, 'w', encoding='utf-8') as json_file_calib:
-            json.dump(sensors_data, json_file_calib, ensure_ascii=False, indent=4)
+            json.dump(filtered_sensors_data, json_file_calib, ensure_ascii=False, indent=4)
 
-        # 保存提取的 'bounding_boxes' 数据到目标 label 路径
         with open(target_file_label, 'w', encoding='utf-8') as json_file_label:
             json.dump(bounding_boxes_data, json_file_label, ensure_ascii=False, indent=4)
 
-        print(f"已保存: {target_file_calib}")
-        print(f"已保存: {target_file_label}")
+        with open(target_file_infra_calib, 'w', encoding='utf-8') as json_file_infra_calib:
+            json.dump(CAM_RS_NORTH_sensors_data, json_file_infra_calib, ensure_ascii=False, indent=4)
+
+        with open(target_file_infra_label, 'w', encoding='utf-8') as json_file_infra_label:
+            json.dump(bounding_boxes_data, json_file_infra_label, ensure_ascii=False, indent=4)
+
+        with open(target_file_coop_label, 'w', encoding='utf-8') as json_file_coop_label:
+            json.dump(bounding_boxes_data, json_file_coop_label, ensure_ascii=False, indent=4)
+
+
+        print(f"\033[32m已保存\033[0m: {target_file_calib}")
+        print(f"\033[32m已保存\033[0m: {target_file_label}")
+        print(f"\033[32m已保存\033[0m: {target_file_infra_calib}")
+        print(f"\033[32m已保存\033[0m: {target_file_infra_label}")
+        print(f"\033[32m已保存\033[0m: {target_file_coop_label}")
+
